@@ -121,9 +121,9 @@ def find_language(text_name, text_vector, lang_vectors, languages,display=0):
 		likely_lang_idx = np.argmax(cos_angles)
 		likely_language = languages[likely_lang_idx]
 		if display:
-				print labeled_cosangles
+				#print labeled_cosangles
 				print 'most likely language of ' + text_name + ' is ' + str(likely_language)
-		return likely_language
+		return likely_language, labeled_cosangles
 
 def generate_ordered_clusters(alphabet, cluster_sz=1):
 		# generates list of letter clusters of size "cluster" with "alphabet", ordered

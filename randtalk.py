@@ -62,14 +62,15 @@ def test_PS_vec(word, phoneme, stress):
     buffed_stress = '   ' + stress + '   '
     for letter_idx in xrange(window_sz, len(buffed_word)-window_sz):
             window = buffed_word[letter_idx - window_sz: letter_idx + window_sz + 1]
+            print "~~~~~~~~~~~~"
             print window, buffed_word[letter_idx], buffed_phoneme[letter_idx], buffed_stress[letter_idx]
             phonem_vec, stress_vec = create_PS_win(window)
             #phonem_vec_n /= np.linalg.norm(phonem_vec)
             #stress_vec_n /= np.linalg.norm(stress_vec)
             phonem = phonemes.index(buffed_phoneme[letter_idx])
             stres = stresses.index(buffed_stress[letter_idx])
-            likely_phonem = utils.find_language(buffed_phoneme[letter_idx], phonem_vec, phonemic_vecs, list(phonemes),display=1)
-            likely_stres = utils.find_language(buffed_stress[letter_idx], stress_vec, stress_vecs, list(stresses),display=1)
+            likely_phonem, phonemangs = utils.find_language(buffed_phoneme[letter_idx], phonem_vec, phonemic_vecs, list(phonemes),display=1)
+            likely_stres, stressangs = utils.find_language(buffed_stress[letter_idx], stress_vec, stress_vecs, list(stresses),display=1)
 
 # train phonemic and stress syllabic vectors
 for i in xrange(num_epochs):
@@ -95,7 +96,7 @@ print stresangles
 
 # test
 testing = 0
-test_num = 0
+test_num = 20
 data = open(datafile)
 for line in data:
     word, phoneme, stress, odd = string.split(line,'\t')
