@@ -9,16 +9,18 @@ import scipy.io as scio
 import numpy as np
 import matplotlib.pyplot as plt
 import string
+import espeak_converter as esc
 from tqdm import tqdm
 
 # fixed parameters
-N = 10000
+N = 100
 k = 10
-window_sz = 2
+window_sz = 1
 alphabet = string.lowercase + ' .'
 phonemes = 'abcdefghiklmnoprstuvwxyz' + 'ACDEGIJKLMNORSTUWXYZ' + '@!#*^+-'
 stresses = '><012'
 datafile = './data/nettalk_m.data'
+testfile = './data/test.data'
 num_epochs = 1
 
 # initialize RI vectors
@@ -70,7 +72,28 @@ def create_PS_win(window,window_sz=window_sz):
             roller += 1
     return phonem_vec, stress_vec
 
+def learn_PS(word, window_sz=window_sz, display=0):
+    learnt_phoneme = ''
+    learnt_stress = ''
+    dummy = 'unknown'
+
+    buffed_word = buffed(word)
+
+    for letter_idx in xrange(window_sz, len(buffed_word) - window_sz):
+            window = buffed_word[letter_idx - window_sz: letter_idx + window_sz + 1]
+            phonem_vec, stress_vec = create_PS_win(window)
+            likely_phonem, phonem_angs = utils.find_language(dummy, phonem_vec, phonemic_vecs, list(phonemes),display=0)
+            likely_stres, stress_angs = utils.find_language(dummy, stress_vec, stress_vecs, list(stresses),display=0)
+            learnt_phoneme += likely_phonem
+            learnt_stress += likely_stres
+    if display: print word, learnt_phoneme, learnt_stress
+    return learnt_phoneme, learnt_stress
+
+
 def test_PS_vec(word, phoneme, stress, display=0):
+    learnt_phoneme = ''
+    learnt_stress = ''
+
     if display:
             print word
     buffed_word = buffed(word)
@@ -89,6 +112,8 @@ def test_PS_vec(word, phoneme, stress, display=0):
             stres = stresses.index(buffed_stress[letter_idx])
             likely_phonem, phonem_angs = utils.find_language(buffed_phoneme[letter_idx], phonem_vec, phonemic_vecs, list(phonemes),display=1)
             likely_stres, stress_angs = utils.find_language(buffed_stress[letter_idx], stress_vec, stress_vecs, list(stresses),display=1)
+            learnt_phoneme += likely_phonem
+            learnt_stress += likely_stres
 
             # add number of correct and total phonemes/stress for results
             global total_phoneme; global total_stress; global correct_phoneme; global correct_stress
@@ -98,6 +123,7 @@ def test_PS_vec(word, phoneme, stress, display=0):
                     correct_phoneme += 1
             if buffed_stress[letter_idx] == likely_stres:
                     correct_stress += 1
+    return learnt_phoneme, learnt_stress
 
 # train phonemic and stress syllabic vectors
 for i in xrange(num_epochs):
@@ -120,10 +146,9 @@ phonangles = utils.cosangles(phonemic_vecs,list(phonemes))
 
 stresangles = utils.cosangles(stress_vecs,list(stresses))
 #print stresangles
-
-# test
+# test training data
 testing = 0
-test_num = 1
+test_num = 0
 total_phoneme = 0
 total_stress = 0
 correct_phoneme = 0
@@ -131,9 +156,28 @@ correct_stress = 0
 data = open(datafile)
 for line in data:
     word, phoneme, stress, odd = string.split(line,'\t')
-    test_PS_vec(word, phoneme, stress, display=1)
+    learnt_phoneme, learnt_stress = test_PS_vec(word, phoneme, stress, display=1)
+    espeak_phoneme = esc.to_espeak(learnt_phoneme)
+
+    # synthesis word and learnt word
+    print word, phoneme, learnt_phoneme
+    SPEAK = 'espeak -v en ' + esc.to_espeak(phoneme)
+    SPEAK_learn = 'espeak -v en ' + espeak_phoneme
+    utils.execute_unix(SPEAK)
+    utils.execute_unix(SPEAK_learn)
     if testing >= test_num: break
     testing += 1
-
 print 'phoneme correctness: %4.4f' % (float(correct_phoneme)/total_phoneme)
 print 'stress correctness: %4.4f' % (float(correct_stress)/total_stress)
+
+# testing arbitrary strings
+testdata = open(testfile)
+for line in testdata:
+    words = line.split()
+    total_phonemes = ''
+    for word in words:
+            learnt_phoneme, learnt_stress = learn_PS(word, display=1)
+            total_phonemes += ' ' + learnt_phoneme
+    SPEAK_test = 'espeak -v en ' + esc.to_espeak(total_phonemes[1:])
+    print SPEAK_test
+    utils.execute_unix(SPEAK_test)

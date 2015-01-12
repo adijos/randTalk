@@ -16,6 +16,7 @@ import numpy as np
 import itertools
 import matplotlib.pyplot as plt
 import networkx as nx
+import subprocess
 
 # constants
 whitespace = string.whitespace
@@ -239,3 +240,9 @@ def disp_confusion_mat(data,row_labels=None,col_labels=None,save=0,display=0):
 
 		if display:
 				plt.show()
+
+
+def execute_unix(inputcommand):
+        p = subprocess.Popen(inputcommand, stdout=subprocess.PIPE, shell=True)
+        (output, err) = p.communicate()
+        return output
