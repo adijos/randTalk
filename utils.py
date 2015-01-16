@@ -17,6 +17,7 @@ import itertools
 import matplotlib.pyplot as plt
 import networkx as nx
 import subprocess
+from tsne import *
 
 # constants
 whitespace = string.whitespace
@@ -240,6 +241,23 @@ def disp_confusion_mat(data,row_labels=None,col_labels=None,save=0,display=0):
 
 		if display:
 				plt.show()
+
+def plot_clusters(matrix, listy, no_dims=2, initial_dims=100, perplexity=10):
+        figure1 = plt.figure()
+        Y = tsne(matrix,no_dims=no_dims,initial_dims=initial_dims,perplexity=perplexity)
+        plt.scatter(Y[:,0],Y[:,1])#,len(languages),np.r_[1:len(languages)])
+        for label, x, y in zip(listy, Y[:, 0], Y[:, 1]):
+            plt.annotate(
+                label, 
+                xy = (x, y), xytext = (-20, 20),
+                textcoords = 'offset points', ha = 'right', va = 'bottom',
+                bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5),
+                arrowprops = dict(arrowstyle = '->', connectionstyle = 'arc3,rad=0'),
+                                        fontsize='x-large')
+        frame = plt.gca()
+        frame.axes.get_xaxis().set_ticks([])
+        frame.axes.get_yaxis().set_ticks([])
+        return
 
 
 def execute_unix(inputcommand):

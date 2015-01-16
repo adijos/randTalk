@@ -10,6 +10,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import string
 import espeak_converter as esc
+from tsne import *
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 # fixed parameters
@@ -125,6 +127,19 @@ def test_PS_vec(word, phoneme, stress, display=0):
                     correct_stress += 1
     return learnt_phoneme, learnt_stress
 
+def testline():
+        # testing arbitrary strings
+        testdata = open(testfile)
+        for line in testdata:
+            words = line.split()
+            total_phonemes = ''
+            for word in words:
+                    learnt_phoneme, learnt_stress = learn_PS(word, display=1)
+                    total_phonemes += ' ' + learnt_phoneme
+            SPEAK_test = 'espeak -v en-sc ' + esc.to_espeak(total_phonemes[1:])
+            print SPEAK_test
+            utils.execute_unix(SPEAK_test)
+
 # train phonemic and stress syllabic vectors
 for i in xrange(num_epochs):
         data = open(datafile)
@@ -134,6 +149,7 @@ for i in xrange(num_epochs):
 
             # debugging line
             #if i >= debug_num: break
+        #testline()
 
 # normalize learnt vectors
 #for j in xrange(len(phonemes)):
@@ -143,12 +159,12 @@ for i in xrange(num_epochs):
 
 phonangles = utils.cosangles(phonemic_vecs,list(phonemes))
 #print phonangles
-
 stresangles = utils.cosangles(stress_vecs,list(stresses))
 #print stresangles
+
 # test training data
 testing = 0
-test_num = 0
+test_num = 5 # number of words you would like to test
 total_phoneme = 0
 total_stress = 0
 correct_phoneme = 0
@@ -161,8 +177,9 @@ for line in data:
 
     # synthesis word and learnt word
     print word, phoneme, learnt_phoneme
-    SPEAK = 'espeak -v en ' + esc.to_espeak(phoneme)
-    SPEAK_learn = 'espeak -v en ' + espeak_phoneme
+    langspeak = '-v en-us'
+    SPEAK = 'espeak ' + langspeak + ' ' + esc.to_espeak(phoneme)
+    SPEAK_learn = 'espeak ' + langspeak + ' ' + espeak_phoneme
     utils.execute_unix(SPEAK)
     utils.execute_unix(SPEAK_learn)
     if testing >= test_num: break
@@ -170,14 +187,7 @@ for line in data:
 print 'phoneme correctness: %4.4f' % (float(correct_phoneme)/total_phoneme)
 print 'stress correctness: %4.4f' % (float(correct_stress)/total_stress)
 
-# testing arbitrary strings
-testdata = open(testfile)
-for line in testdata:
-    words = line.split()
-    total_phonemes = ''
-    for word in words:
-            learnt_phoneme, learnt_stress = learn_PS(word, display=1)
-            total_phonemes += ' ' + learnt_phoneme
-    SPEAK_test = 'espeak -v en ' + esc.to_espeak(total_phonemes[1:])
-    print SPEAK_test
-    utils.execute_unix(SPEAK_test)
+utils.plot_clusters(phonangles, list(phonemes), perplexity=30)
+utils.plot_clusters(stresangles, list(stresses), perplexity=20)
+
+plt.show()
